@@ -226,9 +226,9 @@ void MainWidget::arbeitGewaehlt( QString sArbeit)
      int ncol = sListAufgaben->size();
 
     //create model
-    //QStandardItemModel *model = new QStandardItemModel( nrow, ncol, this );
+    QStandardItemModel *model = new QStandardItemModel( nrow, ncol, this );
 
-     MyModel *model = new MyModel( this );
+    // MyModel *model = new MyModel( this );
     //
     // Tabelle mit Werten füllen
     //
