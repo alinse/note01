@@ -14,9 +14,6 @@
 #include <QPushButton>
 
 #include <QDomDocument>
-#include <QXmlQuery>
-#include <QXmlFormatter>
-#include <QtXmlPatterns>
 
 MainWidget::MainWidget(QWidget *parent) :
     QWidget(parent)
@@ -128,9 +125,11 @@ public:
     }
 };
 
-///////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////
+/*
 bool MainWidget::readXMLFile( QIODevice *device )
 {
+    Q_ASSERT(0);
     QString errorStr;
     int errorLine;
     int errorColumn;
@@ -159,11 +158,6 @@ bool MainWidget::readXMLFile( QIODevice *device )
         return false;
     }
 
-//    // clear();
-
-//    disconnect(this, SIGNAL(itemChanged(QTreeWidgetItem*,int)),
-//               this, SLOT(updateDomElement(QTreeWidgetItem*,int)));
-
     QDomElement child = root.firstChildElement("klasse");
     qDebug() << "Erstes Kind: Type = " << child.nodeType();
     while (!child.isNull()) {
@@ -177,6 +171,7 @@ bool MainWidget::readXMLFile( QIODevice *device )
     return true;
 
 }
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////
 void MainWidget::arbeitGewaehlt( QString sArbeit)
@@ -186,74 +181,22 @@ void MainWidget::arbeitGewaehlt( QString sArbeit)
 
     QString fileName = APP_PATH + sAktuelleKlasse + "/" + sArbeit+".xml";
     qDebug() << "Arbeit-Datei: " << fileName;
-    QFile file( fileName );
+
+    QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(this, tr("Error"), "arbeitGewaehlt(): Could not open file: "+fileName);
+        QMessageBox::critical(this, tr("Error"), "klasseGewaehlt(): Could not open file: "+fileName);
         return;
     }
-    textEdit->setText(file.readAll());
+    QTextStream in(&file);
+    textEdit->setText(in.readAll());
 
-    QXmlQuery queryAufgaben;
-    queryAufgaben.setQuery("doc('"+fileName+"')/arbeit/aufgaben/aufgabe/string()");
-
-    if (!queryAufgaben.isValid()) {
-        qDebug() << "invalid query (Aufgaben)!";
-        return;
-    }
-    QStringList *sListAufgaben = new QStringList();
-    if (!queryAufgaben.evaluateTo(sListAufgaben)) {
-        qDebug() << "invalid evaluateTo (Aufgaben)!";
-        return;
-    }
-
-    QXmlQuery querySchueler;
-    querySchueler.setQuery("doc('"+fileName+"')/arbeit/schueler/@name/string()");
-
-    if (!querySchueler.isValid()) {
-        qDebug() << "invalid query (Schueler)!";
-        return;
-    }
-    QStringList *sListSchueler = new QStringList();
-    if (!querySchueler.evaluateTo(sListSchueler)) {
-        qDebug() << "invalid evaluateTo (Schueler)!";
-        return;
-    }
-
-    //
-    // Tabelle konstruieren
-    //
-     int nrow = sListSchueler->size();
-     int ncol = sListAufgaben->size();
-
-    //create model
-    QStandardItemModel *model = new QStandardItemModel( nrow, ncol, this );
-
-    // MyModel *model = new MyModel( this );
-    //
-    // Tabelle mit Werten füllen
-    //
-
-    //create QTableview Header
-    for (int i=0; i<ncol; i++)
-        model->setHorizontalHeaderItem( i, new QStandardItem( sListAufgaben->at(i)) );
-
-    for (int i=0; i<nrow; i++)
-        model->setVerticalHeaderItem( i, new QStandardItem( sListSchueler->at(i)) );
-
-    //fill model value
-    for( int r=0; r<nrow; r++ )
-    {
-        for( int c=0; c<ncol; c++)
-        {
-            QString sstr = "[ " + QString::number(r) + " , " + QString::number(c) + " ]";
-            // QStandardItem *item = new QStandardItem(QString("Idx ") + sstr);
-            MyItem *myItem = new MyItem(QString("Idx ") + sstr);
-            model->setItem(r, c, myItem );
-        }
-    }
-
-    //set model
+    MyModel *model = new MyModel( this, fileName );
 
     tableView->setModel(model);
     tableView->resizeColumnsToContents();
+}
+
+void MainWidget::setText(QString text)
+{
+    textEdit->setText(text);
 }

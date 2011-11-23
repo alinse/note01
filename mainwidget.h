@@ -23,6 +23,8 @@ public slots:
     void klasseGewaehlt(QString sKlasse);
     void arbeitGewaehlt(QString sArbeit);
 
+    void setText( QString text );
+
 private:
     QTextEdit *textEdit;
     QString APP_PATH;
