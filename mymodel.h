@@ -18,6 +18,7 @@ signals:
     void textLoaded( QString );
 
 private:
+    QString sXml;
     QStringList *sListAufgaben;
     QStringList *sListSchueler;
 };

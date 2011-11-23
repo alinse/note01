@@ -187,9 +187,11 @@ void MainWidget::arbeitGewaehlt( QString sArbeit)
         QMessageBox::critical(this, tr("Error"), "klasseGewaehlt(): Could not open file: "+fileName);
         return;
     }
+
     QTextStream in(&file);
     textEdit->setText(in.readAll());
 
+    // @todo: Wann wird dieser Speicher wieder freigegeben?
     MyModel *model = new MyModel( this, fileName );
 
     tableView->setModel(model);

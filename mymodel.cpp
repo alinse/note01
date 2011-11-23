@@ -14,32 +14,33 @@ MyModel::MyModel(QObject *parent, QString inputXmlFilename) :
 {
     QString fileName = inputXmlFilename;
 
-    /*
     QFile file( fileName );
     if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(0, tr("Error"), "arbeitGewaehlt(): Could not open file: "+fileName);
         return;
     }
     QTextStream in(&file);
-    QString sXml = in.readAll();
-    */
+    sXml = in.readAll();
 
     QXmlQuery queryAufgaben;
-    // queryAufgaben.setFocus(sXml);
-    queryAufgaben.setQuery("doc('"+fileName+"')/arbeit/aufgaben/aufgabe/string()");
+    queryAufgaben.setFocus(sXml);
+    queryAufgaben.setQuery("/arbeit/aufgaben/aufgabe/string()");
 
     if (!queryAufgaben.isValid()) {
         qDebug() << "invalid query (Aufgaben)!";
         return;
     }
+
     sListAufgaben = new QStringList();
     if (!queryAufgaben.evaluateTo(sListAufgaben)) {
         qDebug() << "invalid evaluateTo (Aufgaben)!";
         return;
     }
 
+    ////////////////////////////
     QXmlQuery querySchueler;
-    querySchueler.setQuery("doc('"+fileName+"')/arbeit/schueler/@name/string()");
+    querySchueler.setFocus(sXml);
+    querySchueler.setQuery("/arbeit/schueler/@name/string()");
 
     if (!querySchueler.isValid()) {
         qDebug() << "invalid query (Schueler)!";
@@ -87,11 +88,36 @@ int MyModel::columnCount(const QModelIndex &parent) const
 QVariant MyModel::data(const QModelIndex &index, int role) const
 {
     switch (role){
-    case Qt::DisplayRole:
 
-        return QString("[ " + QString::number(index.row()) + " , " + QString::number(index.column()) + " ]");
+    case Qt::DisplayRole:
+    {
+        int row = index.row();
+        int col = index.column();
+
+        QString sSchueler = sListSchueler->at(row);
+        QString sAufgabe = sListAufgaben->at(col);
+
+        QXmlQuery queryNote;
+        queryNote.setFocus(sXml);
+        QString sQuery = "/arbeit/schueler[@name=\""+sSchueler+"\"]/aufgabe[@bezeichner=\""+sAufgabe+"\"]/@punkte/string()";
+        queryNote.setQuery(sQuery);
+
+        if (!queryNote.isValid()) {
+            qDebug() << "invalid query (queryNote)!";
+            qDebug() << sQuery;
+            return "invalid query (queryNote)!";
+        }
+        QString s="<leer>";
+        if (!queryNote.evaluateTo(&s)) {
+            qDebug() << "invalid evaluateTo (queryNote)!";
+            return "invalid evaluateTo (queryNote)!";
+        }
+        return s;
+        break;
+    }
     case Qt::CheckStateRole:
         return QVariant();
+        break;
     }
     return QVariant();
 }
