@@ -2,6 +2,14 @@
 #define MYMODEL_H
 
 #include <QAbstractTableModel>
+#include <QVector>
+#include <QDomNode>
+
+/// List aller Punkte pro Schüler
+class Node;
+
+typedef QVector<Node *> NodeVector;
+
 
 class MyModel : public QAbstractTableModel
 {
@@ -18,8 +26,16 @@ signals:
     void textLoaded( QString );
 
 private:
+    void readXmlFile( QString filename );
+    void processNode(QDomNode n, QString sPrefix = "  ");
+    void processAufgaben(QDomNode n, QString prefix);
+    void processAufgabe(QDomNode n, QString sPrefix = "  ");
+    void processSchueler(QDomNode n, QString sPrefix);
+    void processSchuelerAufgaben(QDomNode n, QString sPrefix, NodeVector *schuelerzeile);
+
     QString sXml;
     QStringList *sListAufgaben;
     QStringList *sListSchueler;
+    QVector<NodeVector> vectorNodes;
 };
 #endif // MYMODEL_H

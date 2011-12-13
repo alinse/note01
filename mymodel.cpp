@@ -6,22 +6,145 @@
 #include <QXmlQuery>
 #include <QXmlFormatter>
 #include <QtXmlPatterns>
+#include <QDomNode>
+#include <QTextStream>
 
+/*class NodeWrapper
+{
+public:
+    NodeWrapper( QDomeNode &node );
+
+private:
+    QDomNode &node;
+
+};
+*/
+
+/*
+QDebug operator<<(QDebug dbg, const  QDomNode &n)
+{
+    dbg.nospace() << "nodeName=" << n.nodeName() << "(Type=" << n.nodeType() << ")"
+                  << " (Value=" << n.nodeValue() << "): " << n.toElement().text();
+
+    dbg.nospace() << " [";
+    QDomNamedNodeMap namedNodeMapAttributes = n.attributes();
+    for ( int i=0; i<namedNodeMapAttributes.length(); i++ ) {
+        QDomNode item = namedNodeMapAttributes.item(i);
+        dbg.nospace() << item.nodeName() << "/"<< item.nodeValue(); // << "/" << item.
+    }
+    dbg.nospace() << "]";
+    return dbg.space();
+}
+
+void MyModel::processAufgabe( QDomNode n, QString sPrefix )
+{
+    qDebug() << n;
+
+}
+
+void MyModel::processAufgaben( QDomNode n, QString sPrefix )
+{
+
+    qDebug() << "Aufgaben: Name=" << n.nodeName() << "  (Type: " << n.nodeType() << ")";
+    if ( n.hasChildNodes()) {
+        QDomNodeList list = n.childNodes();
+        for ( uint i=0; i < list.length(); i++ ) {
+            QDomNode a = list.item(i);
+            qDebug() << a;
+            sListAufgaben->append( a.toElement().text() );
+         }
+    }
+    else {
+        QMessageBox::critical(0, tr("Error"), "<aufgaben> ohne Kinder!");
+    }
+}
+
+void MyModel::processSchueler( QDomNode n, QString sPrefix )
+{
+
+    NodeVector schuelerzeile;
+    qDebug() << "Schüler: Name=" << n.nodeName() << "  (Type: " << n.nodeType() << ")";
+    QDomNamedNodeMap namedNodeMapAttributes = n.attributes();
+    if ( namedNodeMapAttributes.contains("name")) {
+        sListSchueler->append( QString( namedNodeMapAttributes.namedItem("name").nodeValue()));
+        vectorNodes.append( schuelerzeile );
+    }
+    else {
+        QMessageBox::critical(0, tr("Error"), "Schüler ohne name-Attribut!");
+    }
+
+    if ( n.hasChildNodes()) {
+        QDomNodeList list = n.childNodes();
+        for ( uint i=0; i < list.length(); i++ ) {
+            QDomNode a = list.item(i);
+            qDebug() << a;
+            QDomNamedNodeMap namedNodeMapAttributes = n.attributes();
+
+            QDomElement e = n.toElement();
+
+            qDebug() << e.attribute("bezeichner");
+            qDebug() << e.attribute("punkte");
+
+            QString aufgabe = namedNodeMapAttributes.namedItem("bezeichner").nodeValue();
+            QString punkte = namedNodeMapAttributes.namedItem("punkte").nodeValue();
+            int iAufgabePos = sListAufgaben->indexOf(aufgabe);
+            schuelerzeile[iAufgabePos] = a;
+            // processSchuelerAufgaben( , sPrefix + " CoS ", schuelerzeile );
+
+         }
+    }
+    else {
+        QMessageBox::critical(0, tr("Error"), "<Schueler> ohne Kinder!");
+    }
+
+}
+
+void MyModel::processSchuelerAufgaben( QDomNode n, QString sPrefix, DomNodeVector *schuelerzeile )
+{
+    qDebug() << sPrefix << n;
+}
+
+void MyModel::processNode( QDomNode n, QString sPrefix )
+{
+    qDebug() << "Name=" << n.nodeName() << "  (Type: " << n.nodeType() << ")";
+    if (n.isElement()) {
+        qDebug() << sPrefix << n.toElement().tagName() << endl;
+        if ( n.nodeName() == "aufgaben") {
+            processAufgaben( n, sPrefix + ">> " );
+            return;
+        }
+        else if ( n.nodeName() == "schueler") {
+            processSchueler( n, sPrefix + "## " );
+            return;
+        }
+    }
+    if ( n.hasChildNodes()) {
+        QDomNodeList list = n.childNodes();
+        for ( uint i=1; i <= list.length(); i++ ) {
+            processNode( list.item(i), sPrefix + "  " );
+         }
+    }
+}
+*/
+
+class Node
+{
+public:
+    Node( int i, int j) : _row(i), _col(j) { qDebug() << "Neuer: " << text(); }
+    QString text() {
+        return QString("Node(row: %1,col: %2)").arg(_row).arg(_col);
+    }
+private:
+    int _row, _col;
+    int _iPunkte;
+    int note();
+};
 
 ///////////////////////////////////////////////////////////////////////////////////
 MyModel::MyModel(QObject *parent, QString inputXmlFilename) :
     QAbstractTableModel(parent)
 {
-    QString fileName = inputXmlFilename;
-
-    QFile file( fileName );
-    if (!file.open(QIODevice::ReadOnly)) {
-        QMessageBox::critical(0, tr("Error"), "arbeitGewaehlt(): Could not open file: "+fileName);
-        return;
-    }
-    QTextStream in(&file);
-    sXml = in.readAll();
-
+    readXmlFile( inputXmlFilename );
     QXmlQuery queryAufgaben;
     queryAufgaben.setFocus(sXml);
     queryAufgaben.setQuery("/arbeit/aufgaben/aufgabe/string()");
@@ -52,7 +175,38 @@ MyModel::MyModel(QObject *parent, QString inputXmlFilename) :
         return;
     }
 
+/*    QDomDocument d;
+    d.setContent( sXml );
+
+    QDomNode n = d.firstChild();
+    while ( ! n.isNull()) {
+        processNode( n );
+        n = n.nextSibling();
+    }
+*/
+
+    for ( int row=0; row<sListSchueler->length(); row++ ) {
+        NodeVector *d = new NodeVector;
+        vectorNodes.append( *d );
+        for ( int col=0; col<sListAufgaben->length(); col++) {
+            d->append( new Node(row, col) );
+        }
+    }
+    // vectorNodes.dumpObjectTree();
 };
+
+void MyModel::readXmlFile( QString inputXmlFilename )
+{
+    QString fileName = inputXmlFilename;
+
+    QFile file( fileName );
+    if (!file.open(QIODevice::ReadOnly)) {
+        QMessageBox::critical(0, tr("Error"), "arbeitGewaehlt(): Could not open file: "+fileName);
+        return;
+    }
+    QTextStream in(&file);
+    sXml = in.readAll();
+}
 
 ///////////////////////////////////////////////////////////////////////////////////
 QVariant MyModel::headerData( int section, Qt::Orientation orientation,  int role) const
@@ -76,6 +230,7 @@ QVariant MyModel::headerData( int section, Qt::Orientation orientation,  int rol
 int MyModel::rowCount(const QModelIndex &parent) const
 {
     return sListSchueler->size();
+
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

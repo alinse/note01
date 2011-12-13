@@ -107,7 +107,7 @@ void MainWidget::klasseGewaehlt(QString sKlasse)
 
 }
 
-
+/*
 class MyItem : public QStandardItem
 {
 public:
@@ -124,7 +124,7 @@ public:
         QStandardItem::setData( value, role );
     }
 };
-
+*/
 //////////////////////////////////////////////////////////////////////////////////
 /*
 bool MainWidget::readXMLFile( QIODevice *device )
